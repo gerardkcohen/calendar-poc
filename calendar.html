@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Calendar Widget POC</title>
+  <meta name="description" content="A more accessible, usable Calendar widget.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+
+<style>
+    html {
+      background-size: cover;
+      box-sizing: border-box;
+      height: 100%;
+    }
+
+    *,
+    *:before,
+    *:after {
+        box-sizing: inherit;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      height: 100%;
+      line-height: 1.5;
+      margin: 1rem;
+    }
+
+    main {
+      align-items: center;
+      display: flex;
+      flex: 1 0 auto;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    footer {
+      flex-shrink: 0;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    ::-moz-focus-inner {
+      border: 0;
+    }
+
+    [tabindex="-1"] {
+      outline: none;
+    }
+
+    .Calendar {
+      border: .125rem solid #000;
+      border-radius: .25rem;
+      display: inline-block;
+      min-height: 25.125rem;
+      padding: 0.625rem;
+      position: relative;
+      width: 100%;
+      min-width: 18rem;
+      max-width: 25.5rem;
+    }
+
+    .Calendar-nav {
+      display: flex;
+      padding: 0.125rem;
+    }
+
+    .Calendar-nav--button,
+    .Calendar-nav--select,
+    .Calendar-help-close {
+      background-color: #fff;
+      border: 0.063rem solid currentColor;
+      border-radius: .25rem;
+      cursor: pointer;
+      margin-right: .5rem;
+    }
+
+    .Calendar-nav--button {
+      color: #000;
+      font-size: 1.5rem;
+      font-weight: bold;
+      height: 2.750rem;
+      width: 2.750rem;
+    }
+
+    .Calendar-nav--button:last-of-type {
+      margin-right: 0;
+    }
+
+    .Calendar-nav--selects {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .Calendar-nav--select {
+      height: 2.750rem;
+      position: relative;
+      width: 100%;
+    }
+
+    .Calendar-nav--select::after {
+      border-top: 0.063rem solid black;
+      border-right: 0.063rem solid black;
+      border-width: 0.188rem;
+      content: '';
+      display: block;
+      height: 0.625rem;
+      position: absolute;
+      right: .5rem;
+      top: 50%;
+      -webkit-transform: rotate(135deg);
+         -moz-transform: rotate(135deg);
+          -ms-transform: rotate(135deg);
+              transform: translateY(-50%) rotate(135deg);
+      width: 0.625rem;
+    }
+
+    .Calendar-nav--select select {
+      -webkit-appearance: none;
+      background-image: none;
+      background: none;
+      border: none;
+      border-radius: .25rem;
+      cursor: pointer;
+      font-size: 1rem;
+      height: 2.750rem;
+      padding: 0 .5rem;
+      width: 100%;
+    }
+
+    .Calendar-nav--button:focus,
+    .Calendar-nav--select select:focus,
+    .Calendar-item:hover:not(.Calendar-item--day):not(:empty),
+    .Calendar-item:focus:not(.Calendar-item--day):not(:empty),
+    .Calendar-help-trigger:focus,
+    .Calendar-help-dialog:focus,
+    .Calendar-help-close:focus {
+      box-shadow: 0 0 0.063rem 0.250rem #0075DB;
+      outline: none;
+    }
+
+    .Calendar-row {
+      display: flex;
+      text-align: center;
+    }
+
+    .Calendar-item {
+      background: #fff;
+      border: 0.125rem solid transparent;
+      border-radius: 0;
+      box-sizing: content-box;
+      font-size: 1rem;
+      font-weight: bold;
+      height: 2.750rem;
+      line-height: 200%;
+      margin: 0.156rem;
+      padding: 0.063rem;
+      position: relative;
+      width: 2.750rem;
+    }
+
+    .Calendar-item[aria-current] {
+      border-color: #005490
+    }
+
+    .Calendar-item[aria-pressed] {
+      cursor: pointer;
+    }
+
+    .Calendar-item[aria-pressed="true"] {
+      background: -webkit-radial-gradient(center, ellipse cover, #005493 63%,#ffffff 65%);
+      background: -o-radial-gradient(center, ellipse cover, #005493 63%,#ffffff 65%);
+      background: radial-gradient(center, ellipse cover, #005493 63%,#ffffff 65%);
+      color: #fff;
+    }
+
+    .Calendar-days {
+      color: #666;
+    }
+
+    .Calendar-item--unavailable:not(.Calendar-item--holiday) {
+      cursor: not-allowed;
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .Calendar-item--holiday {
+      border-bottom: .125rem solid #005493;
+      position: relative;
+    }
+
+    .Calendar-item--holiday.Calendar-item--unavailable {
+      cursor: not-allowed;
+    }
+
+    .Calendar-item--holiday::before {
+      border-style: solid;
+      border-width: 0 0 .688rem .688rem;
+      border-color: transparent transparent #005493 transparent;
+      bottom: -.125rem;
+      content: "";
+      display: inline-block;
+      height: 0;
+      position: absolute;
+      right: -.125rem;
+      width: 0;
+    }
+
+    .Calendar-item--holiday::after {
+      background: #005493;
+      border-radius: 0.250rem;
+      color: #fff;
+      content: attr(data-holiday);
+      font-size: 1rem;
+      font-weight: normal;
+      left: 50%;
+      opacity: 0;
+      padding: .5rem .75rem;
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      transform: translate3d(-50%, calc(-100% - 1.125rem), 0);
+      transition: all 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .Calendar-item--holiday:hover::before,
+    .Calendar-item--holiday:focus::before {
+      border-color: #005493 transparent transparent transparent;
+      border-width: 0.706rem 0.406rem 0 0.406rem;
+      left: 50%;
+      transform: translate3D(-50%, calc(-100% - 2.750rem),0);
+    }
+
+    .Calendar-item--holiday:hover::after,
+    .Calendar-item--holiday:focus::after {
+        opacity: 1;
+    }
+
+    .Calendar-help {
+      position: relative;
+    }
+
+    .Calendar-help-dialog {
+      background-color: #fff;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      left: 0;
+      padding: 1rem;
+      position: absolute;
+      right: 0;
+      top: 0;
+      z-index: 1;
+    }
+
+    .visually-hidden,
+    .Calendar-help-trigger {
+      background-color: #005493;
+      clip: rect(0.063rem, 0.063rem, 0.063rem, 0.063rem);
+      color: #fff;
+      font-size: 0.063rem;
+      height: .5px;
+      overflow: hidden;
+      position: absolute;
+      top: .5rem;
+      white-space: nowrap;
+      width: .5px;
+    }
+
+    .Calendar-help-trigger:focus {
+      clip: initial;
+      font-size: inherit;
+      height: auto;
+      left: 50%;
+      overflow: visible;
+      transform: translateX(-50%);
+      width: auto;
+      z-index: 1;
+    }
+
+    .Calendar-help-close {
+      color: #000;
+      font-size: 1rem;
+    }
+
+    [hidden] {
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <main>
+    <h1>Calendar Widget POC</h1>
+
+    <section class="Calendar" aria-label="Calendar">
+      <section aria-label="Calendar Navigation" class="Calendar-nav u-flex">
+        <button id="previous" class="Calendar-nav--button" type="button" aria-label="Previous month, October 2018">&#10094;</button>
+        <div class="Calendar-nav--selects">
+          <div class="Calendar-nav--select">
+            <select id="month" aria-label="month">
+              <option>January</option>
+              <option>February</option>
+              <option>March</option>
+              <option>April</option>
+              <option>May</option>
+              <option>June</option>
+              <option>July</option>
+              <option>August</option>
+              <option>September</option>
+              <option>October</option>
+              <option>November</option>
+              <option>December</option>
+            </select>
+          </div>
+          <div class="Calendar-nav--select">
+            <select id="year" aria-label="year">
+              <option>2011</option>
+              <option>2012</option>
+              <option>2013</option>
+              <option>2014</option>
+              <option>2015</option>
+              <option>2016</option>
+              <option>2017</option>
+              <option>2018</option>
+              <option>2019</option>
+              <option>2020</option>
+              <option>2021</option>
+              <option>2022</option>
+              <option>2023</option>
+              <option>2024</option>
+              <option>2025</option>
+            </select>
+          </div>
+        </div>
+        <button id="next" class="Calendar-nav--button" type="button" aria-label="Next month, December 2018">&#10095;</button>
+      </section>
+      <div class="Calendar-grid">
+        <div class="Calendar-help">
+          <button id="Calendar-help-trigger" class="Calendar-help-trigger" aria-label="keyboard shortcuts" aria-haspopup="dialog">Keyboard Shortcuts</button>
+        </div>
+        <div class="Calendar-days Calendar-row" aria-hidden="true">
+          <span class="Calendar-item Calendar-item--day">Su</span>
+          <span class="Calendar-item Calendar-item--day">Mo</span>
+          <span class="Calendar-item Calendar-item--day">Tu</span>
+          <span class="Calendar-item Calendar-item--day">We</span>
+          <span class="Calendar-item Calendar-item--day">Th</span>
+          <span class="Calendar-item Calendar-item--day">Fr</span>
+          <span class="Calendar-item Calendar-item--day">Sa</span>
+        </div>
+        <section id="Calendar-dates" aria-label="Calendar dates" role="application">
+        </section>
+      </div>
+      <div id="Calendar-help-dialog" class="Calendar-help-dialog" role="dialog" aria-labelledby="Calendar-help-trigger" hidden tabindex="-1">
+        <span class="visually-hidden">start of dialog</span>
+        <p tabindex="-1">The following keyboard shortcuts are available:</p>
+        <ul>
+          <li><kbd>LEFT</kbd>/ <kbd>RIGHT</kbd> to move day to day.</li>
+          <li><kbd>UP</kbd>/ <kbd>DOWN</kbd> to move week to week.</li>
+          <li><kbd>HOME</kbd> to move to the first day of the month.</li>
+          <li><kbd>END</kbd> to move to the last day of the month.</li>
+          <li><kbd>PAGE UP</kbd> to move to the same day in the previous month.</li>
+          <li><kbd>PAGE DOWN</kbd> to move to the same day in the next month.</li>
+          <li><kbd>SPACE</kbd> to select a date.</li>
+        </ul>
+        <button id="Calendar-help-close" class="Calendar-help-close" type="button">Got it!</button>
+        <span class="visually-hidden">end of dialog</span>
+      </div>
+      <span id="Calendar-updates" class="visually-hidden" aria-live="assertive"></span>
+    </section>
+
+  </main>
+  <footer role="complimentary">
+    <p><a href="https://www.24a11y.com/2018/a-new-day-making-a-better-calendar/">A New Day: Making a Better Calendar</a> <br />
+      Gerard K. Cohen (<a href="https://twitter.com/gerardkcohen">@gerardkcohen</a>), for 24 Accessibility<br />
+
+      <a href="https://www.pluralsight.com/courses/web-accessibility-meeting-guidelines">Meeting Web Accessibility Guidelines (Section 508/ WCAG 2.0)</a>
+      <a href="https://www.pluralsight.com/courses/introduction-developing-custom-components-aria">Introduction to Developing Custom Components with ARIA</a>
+    </p>
+  </footer>
+
+  <script src="dayjs.min.js"></script>
+  <script>
+
+    /**
+     * The following code is for demonstration purposes only. It is extremely verbose and procedural, with most front-end best practices not implemented in favor of being able to exhibit every step needed to make a fully accessible/ usable calendar.
+     *
+     * In any case, the real star of this example is the *HTML markup* used to provide proper accessibility. The HTML is what the users interact with, so you can choose any way you want to render it as long as the accessibility properties are intact.
+     *
+     * This code is provide for for 24 Accessibility article "A New Day: Making a Better Calendar" available at https://www.24a11y.com/2018/a-new-day-making-a-better-calendar/
+     */
+
+    const prevButton = document.getElementById('previous');
+    const nextButton = document.getElementById('next');
+    const monthSelect = document.getElementById('month');
+    const yearSelect = document.getElementById('year');
+    const calendarSection = document.getElementById('Calendar-dates');
+    const calendarHelp = document.getElementById('Calendar-help-trigger');
+    const calendarUpdates = document.getElementById('Calendar-updates');
+    const currentDate = dayjs();
+    let selected;
+    const holidays = {
+      9: {
+        11: {
+          'label': 'My Birthday',
+          'isEnabled': true
+        }
+      },
+      10: {
+        22: {
+          'label': 'Thanksgiving',
+          'isEnabled': false
+        }
+      },
+      11: {
+        25: {
+          'label': 'Christmas',
+          'isEnabled': false
+        }
+      },
+      0: {
+        1: {
+          'label': ' New Year\'s day, Office Closed',
+          'isEnabled': false
+        }
+      },
+      4: {
+        16: {
+          'label': 'Global Accessibility Awareness Day',
+          'isEnabled': true
+        }
+      }
+    };
+
+
+    /**************************************************************************
+     * Important Accessibility Bits
+     *
+     * This is the special stuff to pay attention to. Everything else is just procedural stuff in support of this.
+     *************************************************************************/
+
+    /**
+     * Announce content to assistive technologies, such as dynamic updates based on changing calendar views or selecting a date.
+     * @param  {String} content [The content to be announced to assistive technologies]
+     * @return {void}
+     */
+    const announce = (content) => {
+        setText(calendarUpdates, content);
+
+        // setTimeout(function () {
+        //     setText(calendarUpdates, '');
+        // }, 1000);
+    };
+
+    /**
+     * Selecting a date updates important accessibility properties.
+     *
+     * If there is a currently selected date, it is reset:
+     *   - aria-pressed is set to false.
+     *   - tabindex is set to -1, to remove from natural tab flow.
+     * With the newly selected date:
+     *   - aria-pressed is set to true, to indicate selected state.
+     *   - tabindex attribute is removed, effectively relying on the buttons natural focusable properties, placing it in the natural tab order.
+     *   - The selection is announced to assistive technologies.
+     *
+     * @param  {HTMLButtonElement} date The button element that was selected.
+     * @return {void}
+     */
+    const selectDate = (date) => {
+
+      const selection = calendarSection.querySelector('[aria-pressed="true"]');
+
+      if (selection) {
+        selection.setAttribute('aria-pressed', 'false');
+        selection.setAttribute('tabindex', '-1');
+      }
+
+      date.setAttribute('aria-pressed', 'true');
+      date.removeAttribute('tabindex');
+
+      selected = dayjs.unix(date.getAttribute('data-timestamp'));
+
+      announce(`selected ${date.getAttribute('aria-label')}`);
+    };
+
+    /**
+     * Shows the keyboard shortcut information using a dialog pattern:
+     *
+     *  - Set hidden to false, making the dialog visible to assistive technologies. CSS using [hidden] is used to hide the dialog from sighted users.
+     *  - Set focus on the dialogs first focusable element. Since the first, and only, focusable element is the close button at the bottom, focus is placed on the first paragraph, which has tabindex="-1" to make it programatically focusable, so that the instructions are not skipped over.
+     *  - Event listeners are set.
+     * @param  {Event} event
+     * @return {void}
+     */
+    const showDialog = () => {
+      const dialog = document.getElementById('Calendar-help-dialog');
+      dialog.hidden = false;
+      dialog.firstElementChild.focus();
+      dialog.addEventListener('keydown', onDialogKeydown);
+      dialog.addEventListener('click', onDialogUx);
+      document.documentElement.setAttribute('tabindex', '-1');
+      document.addEventListener('focus', onDialogUx, true);
+    };
+
+    /**
+     * Close the keyboard shortcuts dialog by doing the following:
+     *
+     *  - Event handlers are cleaned up.
+     *  - tabindex on the document is removed.
+     *  - Set the hidden to true, hiding the dialog from assistive technologies. CSS with selector [hidden] hides content with display: none.
+     *  - The element that spawned the dialog is focused.
+     * @return {void}
+     */
+    const closeDialog = () => {
+      const dialog = document.getElementById('Calendar-help-dialog');
+
+      dialog.removeEventListener('keydown', onDialogKeydown);
+      dialog.removeEventListener('click', onDialogUx);
+      document.removeEventListener('focus', onDialogUx, true);
+      document.documentElement.removeAttribute('tabindex');
+
+      dialog.hidden = true;
+      calendarHelp.focus();
+    };
+
+
+    /**
+     * Keydown handler for dialog.
+     *
+     * - Dialogs require ESC to close, and cycling tab within. Since there is only one interactive in this implementation, tab cycles between the close button and dialog container.
+     * @param  {Event} event
+     * @return {void}
+     */
+    const onDialogKeydown = (event) => {
+      const target = event.target;
+
+      if (event.key === 'Escape') {
+        closeDialog();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const dialog = document.getElementById('Calendar-help-dialog');
+        const close = document.getElementById('Calendar-help-close');
+
+        if (event.shiftKey && target === dialog) {
+          event.preventDefault();
+          close.focus()
+        } else if (target === close){
+          event.preventDefault();
+          dialog.focus();
+        }
+      }
+    };
+
+    /**
+     * Builds a date template with necessary accessibility properties:
+     *
+     *  1: A button element, with baked in accessibility for keyboard interaction. Button type set to "button" to replace the default value of "submit."
+     *  2. aria-pressed, used for selection state. A value of "true" means that the date is selected. Default value is false.
+     *  3. aria-label, used to provide an accessible name for the date, which includes the date first, then the day and month, and finally year. Any additional information, e.g. holiday information or disabled (unselectable) dates is also included.
+     *  4. aria-current="date" is used to specify today's date on the calendar.
+     *  5. tabindex is managed, most dates are set to tabindex="-1" which removes them from the natural tab order but makes them problematically focusable. The tabindex property is removed for the same day (today) of every month, and places that day in the natural focus order. In a natural tab sequence, this places that day in the next tab after the Keyboard shortcuts control. Any day could have been chosen, with more logic applied, but this was the easiest for this example.
+     *
+     * @param  {dayjs} day The dayjs object for the calendar day that needs to be rendered.
+     * @param  {dayjs} month A dayjs object with reference to the currently selected month.
+     * @param  {dayjs} today A dayjs object for today's date.
+     * @return {String}     Returns a template for the calendar that needs to be rendered with all accessibility properties set.
+     */
+    const getDateTemplate = (day, month, today) => {
+
+      const hasHoliday = getHoliday(day);
+      const isDisabled = (day.$M !== month.$M) || (day.$W === 0 || day.$W === 6) || (hasHoliday && !hasHoliday.isEnabled);
+      const isCurrent = day.isSame(today);
+      const isSelected = day.isSame(selected);
+
+      return `<button
+                class="Calendar-item ${isDisabled ? 'Calendar-item--unavailable' : 'Calendar-item--active'} ${hasHoliday ? 'Calendar-item--holiday': ''}"
+                type="button"
+                aria-pressed="${isSelected}"
+                aria-label="${dayjs(day).format('D, dddd MMMM YYYY')}${hasHoliday ? `, ${hasHoliday.label}` : ''}${isDisabled ? ', Unavailable' : ''}"
+                ${isCurrent ? 'aria-current="date"' : ''}
+                ${(day.$D !== today.$D) ? 'tabindex="-1"' : ''}
+                ${hasHoliday ? `data-holiday="${hasHoliday.label}"` : ''}
+                data-timestamp="${day.unix()}">
+                  ${day.$D}
+              </button>`;
+    };
+
+    /**
+     * Keydown handler for Calendar date navigation. This calendar supports the following keys:
+     *   - RIGHT, moves keyboard focus to the next day.
+     *   - LEFT, moves keyboard focus to the previous day.
+     *   - UP, moves keyboard focus to the same day in the previous week.
+     *   - DOWN, moves keyboard focus to the same day in the next week.
+     *   - HOME, moves keyboard focus to the first day of the month.
+     *   - END, moves keyboard focus to the last day of the month.
+     *   - PAGE UP, moves keyboard focus to the same day of the previous month.
+     *   - PAGE DOWN, moves keyboard focus to the same day of the next month.
+     * @param  {Event} event
+     * @return {void}
+     */
+    const onKeydown = (event) => {
+
+      const target = event.target;
+      const key = event.key.replace('Arrow','');
+      let next = '';
+
+      if (target.classList.contains('Calendar-item') && key.match(/Up|Down|Left|Right|Home|End|PageUp|PageDown/)) {
+
+        switch (key) {
+          case 'Right':
+            if (target === getLastDate()) {
+              nextMonth();
+              next = getFirstDate();
+            } else {
+              next = target.nextElementSibling || target.parentElement.nextElementSibling.firstElementChild;
+            }
+            break;
+          case 'Left':
+            if (target === getFirstDate()) {
+              previousMonth();
+              next = getLastDate();
+            } else {
+              next = target.previousElementSibling || target.parentElement.previousElementSibling.lastElementChild;
+            }
+            break;
+          case 'Up':
+            if (target === getFirstDate()) {
+              previousMonth();
+              next = getLastDate();
+            } else {
+              const parent = target.parentElement;
+              const index = Array.from(parent.children).indexOf(target);
+              const row = parent.previousElementSibling;
+
+              if (row) {
+                next = row.children.item(index);
+              }
+            }
+            break;
+          case 'Down':
+            if (target === getLastDate()) {
+              nextMonth();
+              next = getFirstDate();
+            } else {
+              const parent = target.parentElement;
+              const index = Array.from(parent.children).indexOf(target);
+              const row = parent.nextElementSibling;
+
+              if (row) {
+                next = row.children.item(index);
+              }
+            }
+            break;
+          case 'Home':
+            next = getFirstDate();
+            break;
+          case 'End':
+            next = getLastDate();
+            break;
+          case 'PageUp':
+          case 'PageDown':
+            if (key === 'PageUp') {
+              previousMonth();
+            } else {
+              nextMonth();
+            }
+            next = Array.from(calendarSection.querySelectorAll('.Calendar-item')).find(date => date.textContent === target.textContent);
+            break;
+          default:
+        }
+        event.preventDefault();
+
+        if (next) {
+            next.focus();
+        } else {
+          announce('end of calendar');
+        }
+      }
+    };
+
+    /**************************************************************************
+     * The below is not relevant to providing accessibility, just a bunch of procedural DOM manipulation.
+     *************************************************************************/
+
+    /**
+     * Helpers
+     */
+    const getIndex = (index, len, dir) => (index + len + dir) % len;
+
+    const getDisplayedMonth = () => dayjs(new Date(yearSelect.item(yearSelect.selectedIndex).value, monthSelect.selectedIndex, '1'));
+
+    const getFirstDate = () => calendarSection.firstElementChild.querySelector('.Calendar-item:first-of-type:not(.Calendar-item--empty)');
+
+    const getLastDate = () => calendarSection.lastElementChild.querySelector('.Calendar-item:last-of-type:not(.Calendar-item--empty)');
+
+    const getHoliday = (date) => {
+      // if (holidays[date.$y]) {
+      //   if (holidays[date.$y][date.$M]) {
+      //     if (holidays[date.$y][date.$M][date.$D]) {
+      //       return holidays[date.$y][date.$M][date.$D];
+      //     }
+      //   }
+      // }
+      // if (holidays[date.$y]) {
+        if (holidays[date.$M]) {
+          if (holidays[date.$M][date.$D]) {
+            return holidays[date.$M][date.$D];
+          }
+        }
+      // }
+
+    };
+
+    const setText = (node, text) => {
+        // let child = node.firstChild;
+
+        // if (child && !child.nextSibling && child.nodeType === 3) {
+        //     child.data = text;
+        // } else {
+        //     node.textContent = text;
+        // }
+        node.innerHTML = text;
+    };
+
+    /**
+     * Event Handlers
+     */
+
+    /**
+     * Previous month control activated
+     *
+     * @return {void}
+     */
+    const previousMonth = () => {
+      const newMonth = getIndex(monthSelect.selectedIndex, monthSelect.length, -1);
+      monthSelect.selectedIndex = newMonth;
+
+      if (newMonth === monthSelect.length -1) {
+        yearSelect.selectedIndex-=1;
+      }
+      updateUI();
+    };
+
+    /**
+     * Next month control activated
+     *
+     * @return {void}
+     */
+    const nextMonth = () => {
+      const newMonth = getIndex(monthSelect.selectedIndex, monthSelect.length, 1);
+      monthSelect.selectedIndex = newMonth;
+
+      if (newMonth === 0) {
+        yearSelect.selectedIndex+=1;
+      }
+      updateUI();
+    };
+
+    /**
+     * User has requested to close the dialog
+     *
+     * @param  {Event} event
+     * @return {void}
+     */
+    const onDialogUx = (event)=> {
+      const target = event.target;
+      const dialog = document.getElementById('Calendar-help-dialog');
+      const close = dialog.querySelector('.Calendar-help-close');
+
+      if (!dialog.contains(target) || (event.type === 'click' && target === close)) {
+        closeDialog();
+      }
+
+    };
+
+    /**
+     * Calendar date control was activated, either fine pointer (mouse, touch, pen) or keyboard (SPACE or ENTER)
+     *
+     * @param  {Event} event
+     * @return {void}
+     */
+    const onActivation = (event) => {
+      const target = event.target;
+      if (target.classList.contains('Calendar-item--active')) {
+        selectDate(target);
+      }
+    };
+
+    /**
+     * Updates UI elements based on calendar navigation, then announces changes to assistive technologies.
+     *
+     * @return {void} [description]
+     */
+    const updateUI = () => {
+
+      const prevMonth = getIndex(monthSelect.selectedIndex, monthSelect.length, -1);
+      const prevYear = (prevMonth === monthSelect.length - 1) ? yearSelect.selectedIndex - 1 : yearSelect.selectedIndex;
+
+      const nextMonth = getIndex(monthSelect.selectedIndex, month.length, 1);
+      const nextYear = (nextMonth === 0) ? yearSelect.selectedIndex + 1 : year.selectedIndex;
+
+      if (prevMonth === 0 && prevYear === 0) {
+          prevButton.disabled = true;
+        } else {
+          prevButton.disabled = false;
+          prevButton.setAttribute('aria-label', 'Previous month, ' + month.item(prevMonth).value + ' ' + year.item(prevYear).value);
+        }
+
+        nextButton.setAttribute('aria-label', `Next month, ${month.item(nextMonth).value} ${year.item(nextYear).value}`);
+
+        let update = `${monthSelect.value} ${year.value}`;
+
+        announce(update);
+
+      renderDates(getDisplayedMonth());
+    };
+
+    /**
+     * Renders the actual calendar grid.
+     *
+     * @param  {dayjs} date A dayjs object based on the currently selected month.
+     *
+     * @return {void}
+     */
+    const renderDates = (date) => {
+      let start = dayjs(date).startOf('month').startOf('week').subtract(1, 'day');
+      let end = dayjs(date).endOf('month').endOf('week').subtract(1 , 'day');
+      let today = dayjs().set('hour', 0).set('minute', 0).set('second', 0).set('millisecond', 0);
+      let calendar = [];
+
+      while (start.isBefore(end)) {
+        calendar.push(Array(7).fill(0).map(() => {
+          start = start.add(1,'day');
+          return start;
+        }));
+
+      }
+
+      let grid = calendar.reduce((rowAcc, row) => {
+
+        let days = row.reduce((dayAcc, day) => {
+
+          day = day.set('hour', 0).set('minute', 0).set('second', 0).set('millisecond', 0);
+
+          if (day.$M !== date.$M) {
+            return `${dayAcc}<span class="Calendar-item Calendar-item--empty"></span>`;
+          } else {
+            return `${dayAcc}${getDateTemplate(day,date,today)}`;
+          }
+
+        }, '');
+
+        return `${rowAcc}<div class="Calendar-row">${days}</div>`;
+      },'');
+
+
+      calendarSection.innerHTML = '';
+      calendarSection.insertAdjacentHTML('beforeEnd', grid);
+    };
+
+    /* Setup */
+    monthSelect.selectedIndex = currentDate.$M;
+
+    yearSelect.selectedIndex = Array.from(yearSelect.options).findIndex(option => option.textContent == currentDate.$y);
+
+    /* Event Listeners */
+    monthSelect.addEventListener('change', updateUI);
+    yearSelect.addEventListener('change', updateUI);
+    prevButton.addEventListener('click', previousMonth);
+    nextButton.addEventListener('click', nextMonth);
+    calendarSection.addEventListener('click', onActivation);
+    calendarSection.addEventListener('keydown', onKeydown);
+    calendarHelp.addEventListener('click', showDialog);
+
+    /* Init */
+    updateUI();
+
+
+  </script>
+
+  <!--
+
+    Copyright (c) 2020 Gerard K. Cohen @gerardkcohen
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+  -->
+
+</body>
+
+</html>
